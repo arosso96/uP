@@ -8,6 +8,8 @@ The first step is to define the requirements that the system must have. These wi
 ### Functional
 * RiscV RV32I ISA
 * Pipelined
+* Forwarding and Stalls Handling (Structural, Data, Control \[see below\])
+* Jump Prediction (Predict, Check and Flush the pipeline)
 * Debug and Test support (Scan Chain design + BIST)
 ### Non-Functional
 
