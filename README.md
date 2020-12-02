@@ -6,9 +6,9 @@ Here are described all the design steps that are being followed for the developm
 ## Requirements
 The first step is to define the requirements that the system must have. These will then be used in the testing phase to check that the developed system respects all the initial requests.
 ### Functional
-RiscV RV32I ISA
-Pipelined
-Debug and Test support (Scan Chain design + BIST)
+* RiscV RV32I ISA
+* Pipelined
+* Debug and Test support (Scan Chain design + BIST)
 ### Non-Functional
 
 
