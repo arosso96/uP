@@ -10,11 +10,17 @@ The first step is to define the requirements that the system must have. These wi
 * Pipelined
 * Forwarding and Stalls Handling (Structural, Data, Control \[see below\])
 * Jump Prediction (Predict, Check and Flush the pipeline)
-* Debug and Test support (Scan Chain design + BIST)
+* Debug and Test support (JTAG + BIST)
 ### Non-Functional
 
 # First Model
 The first model wants to be a sort of ISS (Instruction Set Simulator) loosely timed at instruction level. In order to model it SystemC is used. After the model has been developed it is verified.
+## Schematic
+First let's analyze the system and split it into some major components, divide et impera!
+### uP
+### Instruction Memory
+Remember that one of the requirements was having an Hardvard architecture!
+### Data Memory
 
 # Second Model
 Starting from the previous result, it is possible to expand the model by inserting more detail, modelling each component for instance, still at a non accurate timing level of simulation.
@@ -27,8 +33,6 @@ Starting from the previous result, it is possible to expand the model by inserti
 ##### RF
 ##### ALU
 ##### Jump Prediction Unit
-##### Instruction Memory
-##### Data Memory
 ##### Instruction Cache
 ##### Data Cache
 
