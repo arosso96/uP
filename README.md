@@ -6,7 +6,7 @@ Here are described all the design steps that are being followed for the developm
 ## Requirements
 The first step is to define the requirements that the system must have. These will then be used in the testing phase to check that the developed system respects all the initial requests.
 ### Functional
-* RiscV RV32I ISA
+* RiscV RV32I ISA [2]
 * Pipelined
 * Hardvard architecture
 * Forwarding and Stalls Handling (Structural, Data, Control \[see below\])
@@ -63,3 +63,4 @@ With SystemC it is possible to model the microprocessor with an accurate clock s
 
 # References
 [1] https://inst.eecs.berkeley.edu/~cs61c/sp18/disc/7/disc07_sol.pdf
+[2] https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMAFDQC/riscv-spec-20191213.pdf
