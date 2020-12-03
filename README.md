@@ -62,5 +62,5 @@ With SystemC it is possible to model the microprocessor with an accurate clock s
 
 
 # References
-[1] https://inst.eecs.berkeley.edu/~cs61c/sp18/disc/7/disc07_sol.pdf
+[1] https://inst.eecs.berkeley.edu/~cs61c/sp18/disc/7/disc07_sol.pdf  
 [2] https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMAFDQC/riscv-spec-20191213.pdf
