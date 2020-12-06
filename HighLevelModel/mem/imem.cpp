@@ -23,7 +23,8 @@ SC_MODULE (imem), public mem_if {
 	virtual void write32(unsigned int addr, unsigned int data) {
 		cout << sc_time_stamp() << "ERROR IMEM CANNOT BE WROTE\n";
 	}
-	void load(unsigned int data[]) {
+	void load(unsigned int data[], int size) {
+		memcpy(memData, data, size);
 		cout << sc_time_stamp() << "IMEM LOAD\n";
 	}
 };

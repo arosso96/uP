@@ -25,7 +25,8 @@ SC_MODULE (dmem), public mem_if {
 		if (addr < DMEM_SIZE)
 			memData[addr] = data;
 	}
-	void load(unsigned int data[]) {
+	void load(unsigned int data[], int size) {
+		memcpy(memData, data, size);
 		cout << sc_time_stamp() << "DMEM LOAD\n";
 	}
 };

@@ -2,6 +2,11 @@
 
 #ifndef DECODE_D
 	#define DECODE_D
+	// TODO: remove
+	enum execOpsT {ALU_ADD};
+	enum memOpsT {WRITE};
+	enum wbOpsT {WRITE_REG};
+	// END remove
 	class DecodeStage {
 		private:
 			sc_int<32> regs[32];
@@ -13,6 +18,6 @@
 			
 			DecodeStage(sc_int<32> *regs);
 			
-			void decode(unsigned int opcode, sc_int<32> *a, sc_int<32> *b, sc_signal<execOpsT> *eO, sc_signal<memOpsT> *mO, sc_signal<wbOpsT> *wbO);
-	}
+			void decode(unsigned int opcode, sc_int<32> *a, sc_int<32> *b, sc_signal<execOpsT> *eO, sc_signal<memOpsT> *mO, sc_signal<wbOpsT> *wbO, sc_uint<5> *wbRd);
+	};
 #endif

@@ -1,31 +1,35 @@
 #include "systemc.h"
 #include "../mem/mem_interface.cpp"
 
-#include "decode/decode.h"
+#include "decode/decode_tmp.cpp"
+
+
+
+
 
 SC_MODULE (up) {
-	
+		// TODO: improve printf
 	private:
-		sc_uint<32> pc;
-		sc_int<32> regs[32]; // Registers
-		sc_uint<32> ir[5]; // 5 stage pipeline (Fetch, Decode, Execute, Memory, Write Back)
+		sc_signal<sc_uint<32>> pc;
+		sc_signal<sc_int<32>> regs[32]; // Registers
+		sc_signal<sc_uint<32>> ir[5]; // 5 stage pipeline (Fetch, Decode, Execute, Memory, Write Back)
 
 		// Decode
-		DecodeStage decodeStage;
+		DecodeStage dStage;
 		
 		// Execute
-		enum execOpsT {ALU_ADD};
+		//enum execOpsT {ALU_ADD};
 		sc_signal<execOpsT> execOp;
-		sc_int<32> deA, deB;	// decode to exec
+		sc_signal<sc_int<32>> deA, deB;	// decode to exec
 		// Memory
-		enum memOpsT {WRITE};
+		//enum memOpsT {WRITE};
 		sc_signal<memOpsT> memOp[2];
-		sc_int<32> aluOut, emRs2; // exec to mem
+		sc_signal<sc_int<32>> aluOut, emRs2; // exec to mem
 		// Write Back
-		enum wbOpsT {WRITE_REG};
+		//enum wbOpsT {WRITE_REG};
 		sc_signal<wbOpsT> wbOp[3];
-		sc_uint<5> rd[3];	// destination register for write back operation
-		sc_int<32> memOut; // mem to wb
+		sc_signal<sc_uint<5>> rd[3];	// destination register for write back operation
+		sc_signal<sc_int<32>> memOut; // mem to wb
 		
 	public:
 	
@@ -33,8 +37,21 @@ SC_MODULE (up) {
 	sc_port<mem_if> imem;
 	sc_port<mem_if> dmem;
 	
-	SC_CTOR (up) {
+	SC_CTOR (up) : dStage("DECODE") {
+		dStage.setRegFile(regs);
 		pc = 0;
+		deA = 0;
+		deB = 0;
+		execOp = ALU_ADD;
+		for (int i = 0; i < 2; i++)
+			memOp[i] = MEM_ALU_OUT;
+		aluOut = 0;
+		emRs2 = 0;
+		for (int i=0; i < 3; i++) {
+			wbOp[i] = WB_NOP;
+			rd[i] = 0;
+		}
+		memOut = 0;
 		SC_METHOD(cycle);
 		sensitive << clock.pos();
 		dont_initialize();
@@ -44,7 +61,7 @@ SC_MODULE (up) {
 		return true;
 	}
 	
-	void cycle() {
+	void cycle() { 
 		// TODO: add hazard check -> put NOP instead of fetched ir and don't increase pc
 		// TODO: add jump prediction and pipeline flush
 		
@@ -54,39 +71,51 @@ SC_MODULE (up) {
 		
 		memOp[1] = memOp[0];
 		
-		for (int i = 1; i < 3; i++)
+		for (int i = 1; i < 3; i++) {
 			wbOp[i] = wbOp[i-1];
+			rd[i] = rd[i-1];
+		}
 		
 		// Fetch
-		ir[0] = imem->read32(pc++);
-		decodeStage.decode(ir[0], &deA, &deB, &execOp, memOp, wbOp, rd);
+		ir[0] = imem->read32(pc.read());
+		// next pc
+		pc.write(pc.read()+1);
+		dStage.decode(ir[0].read(), &deA, &deB, &execOp, memOp, wbOp, rd);
 		exec(execOp, deA, deB, &aluOut, &emRs2);
 		memory(memOp[1], aluOut, emRs2, &memOut);
-		wb(wbOp[2], memOut, ir[5]);
+		wb(wbOp[2], memOut, rd[2]);
 	}
 	
 	private:
 	
 		
 		
-		void exec(execOpsT op, sc_int<32> a, sc_int<32> b, sc_int<32> *aluOut, sc_int<32> *emRs2) {
+		void exec(execOpsT op, sc_int<32> a, sc_int<32> b, sc_signal<sc_int<32>> *aluOut, sc_signal<sc_int<32>> *emRs2) {
 			// TODO: implement all operations
 			*emRs2 = b;
-			if (op == ALU_ADD)
+			if (op == ALU_ADD) {
+				printf("ALU_ADD\n");
 				*aluOut = a+b;
-		}
-		
-		void memory(memOpsT op, sc_int<32> aluOut, sc_int<32> rs2, sc_int<32> *memOut) {
-			// TODO: implement all operations
-			if (op == WRITE) {
-				dmem->write32(aluOut, rs2);
-				*memOut = rs2;
 			}
 		}
 		
-		void wb(wbOpsT op, sc_int<32> in, sc_uint<32> ir) {
+		void memory(memOpsT op, sc_int<32> aluOut, sc_int<32> rs2, sc_signal<sc_int<32>> *memOut) {
 			// TODO: implement all operations
-			if (op == WRITE_REG)
-				regs[ir & 0x1F] = in;
+			if (op == MEM_ALU_OUT) {
+				printf("MEM_ALU_OUT\n");
+				*memOut = aluOut;
+			}
+		}
+		
+		void wb(wbOpsT op, sc_int<32> in, sc_uint<5> rd) {
+			// TODO: implement all operations
+			switch (op) {
+				case WB_WRITE_REG:
+					printf("WB_WRITE_REG\n");
+					regs[(int) rd] = in;
+					break;
+				default:	// WB_NOP
+					printf("WB_NOP");
+			}
 		}
 };
