@@ -1,12 +1,18 @@
 #include "systemc.h"
 #include "../mem/mem_interface.cpp"
 
+#include "decode/decode.h"
+
 SC_MODULE (up) {
 	
 	private:
 		sc_uint<32> pc;
 		sc_int<32> regs[32]; // Registers
 		sc_uint<32> ir[5]; // 5 stage pipeline (Fetch, Decode, Execute, Memory, Write Back)
+
+		// Decode
+		DecodeStage decodeStage;
+		
 		// Execute
 		enum execOpsT {ALU_ADD};
 		sc_signal<execOpsT> execOp;
@@ -52,21 +58,15 @@ SC_MODULE (up) {
 		
 		// Fetch
 		ir[0] = imem->read32(pc++);
-		decode(ir[0], &deA, &deB, &execOp, memOp, wbOp);
+		decodeStage.decode(ir[0], &deA, &deB, &execOp, memOp, wbOp);
 		exec(execOp, deA, deB, &aluOut, &emRs2);
 		memory(memOp[1], aluOut, emRs2, &memOut);
 		wb(wbOp[2], memOut, ir[5]);
 	}
 	
 	private:
-		void decode(unsigned int opcode, sc_int<32> *a, sc_int<32> *b, sc_signal<execOpsT> *eO, sc_signal<memOpsT> mO[], sc_signal<wbOpsT> wbO[]) {
-			// TODO: parse opcode
-			*a = 1;
-			*b = 2;
-			*eO = ALU_ADD;
-			mO[0] = WRITE;
-			wbO[0] = WRITE_REG;
-		}
+	
+		
 		
 		void exec(execOpsT op, sc_int<32> a, sc_int<32> b, sc_int<32> *aluOut, sc_int<32> *emRs2) {
 			// TODO: implement all operations
