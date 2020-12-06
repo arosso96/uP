@@ -24,6 +24,7 @@ SC_MODULE (up) {
 		// Write Back
 		enum wbOpsT {WRITE_REG};
 		sc_signal<wbOpsT> wbOp[3];
+		sc_uint<5> rd[3];	// destination register for write back operation
 		sc_int<32> memOut; // mem to wb
 		
 	public:
@@ -58,7 +59,7 @@ SC_MODULE (up) {
 		
 		// Fetch
 		ir[0] = imem->read32(pc++);
-		decodeStage.decode(ir[0], &deA, &deB, &execOp, memOp, wbOp);
+		decodeStage.decode(ir[0], &deA, &deB, &execOp, memOp, wbOp, rd);
 		exec(execOp, deA, deB, &aluOut, &emRs2);
 		memory(memOp[1], aluOut, emRs2, &memOut);
 		wb(wbOp[2], memOut, ir[5]);

@@ -1,6 +1,11 @@
 #include "decode.h"
 
-decodeOpsT typeR(unsigned int opcode, sc_uint<5> *rs1, sc_uint<5> *rs2, sc_uint<5> *rd, sc_uint<10> *funct) {
+DecodeStage::DecodeStage(sc_int<32> *regs) {
+	this.regs = regs;
+}
+
+decodeOpsT typeR(unsigned int opcode, sc_uint<5> *rs1, sc_uint<5> *rs2, sc_uint<5> *rd) {
+	sc_uint<10> funct;
 	*rs1 = (opcode & 0xF8000) >> 15;
 	*rs2 = (opcode & 0x1F00000) >> 20;
 	*rd = (opcode & 0xF80) >> 7;
@@ -48,7 +53,8 @@ decodeOpsT typeR(unsigned int opcode, sc_uint<5> *rs1, sc_uint<5> *rs2, sc_uint<
 	}
 }
 
-decodeOpsT typeI(unsigned int opcode, sc_uint<5> *rs1, sc_uint<32> *imm, sc_uint<5> *rd, sc_uint<3> *funct) {
+decodeOpsT typeI(unsigned int opcode, sc_uint<5> *rs1, sc_int<32> *imm, sc_uint<5> *rd) {
+	sc_uint<3> funct;
 	*rs1 = (opcode & 0xF8000) >> 15;
 	*rd = (opcode & 0xF80) >> 7;
 	*imm = (opcode & 0xFFF00000) >> 20;
@@ -116,7 +122,8 @@ decodeOpsT typeI(unsigned int opcode, sc_uint<5> *rs1, sc_uint<32> *imm, sc_uint
 	}
 }
 
-decodeOpsT typeS(unsigned int opcode, sc_uint<5> *rs1, sc_uint<5> *rs2, sc_uint<32> *imm, sc_uint<3> *funct) {
+decodeOpsT typeS(unsigned int opcode, sc_uint<5> *rs1, sc_uint<5> *rs2, sc_int<32> *imm) {
+	sc_uint<3> funct;
 	*rs1 = (opcode & 0xF8000) >> 15;
 	*rs2 = (opcode & 0x1F00000) >> 20;
 	*imm = ((opcode & 0xFE000000) >> 20) | ((opcode & 0xF80) >> 7);
@@ -156,7 +163,7 @@ decodeOpsT typeS(unsigned int opcode, sc_uint<5> *rs1, sc_uint<5> *rs2, sc_uint<
 	}
 }
 
-decodeOpsT typeU(unsigned int opcode, sc_uint<32> *imm, sc_uint<5> *rd) {
+decodeOpsT typeU(unsigned int opcode, sc_int<32> *imm, sc_uint<5> *rd) {
 	*imm = opcode & 0xFFFFF000;
 	*rd = (opcode & 0xF80) >> 7;
 	// TODO: change with a more flexible configuration that can be reused (example a array as a parameter to the function containing opcode => return execFunct)
@@ -172,11 +179,252 @@ decodeOpsT typeU(unsigned int opcode, sc_uint<32> *imm, sc_uint<5> *rd) {
 	}
 }
 
-DecodeStage::void decode(unsigned int opcode, sc_int<32> *a, sc_int<32> *b, sc_signal<execOpsT> *eO, sc_signal<memOpsT> mO[], sc_signal<wbOpsT> wbO[]) {
-	// TODO: parse opcode
-	*a = 1;
-	*b = 2;
-	*eO = ALU_ADD;
-	mO[0] = WRITE;
-	wbO[0] = WRITE_REG;
+void setNop(sc_int<32> *a, sc_int<32> *b, sc_signal<execOpsT> *eO, sc_signal<memOpsT> mO[], sc_signal<wbOpsT> wbO[]) {
+	*a = 0;
+	*b = 0;
+	*eO = ALU_ADD;		// ALU_OUT = 0+0
+	*mO = MEM_ALU_OUT;	// LMD = ALU_OUT = 0
+	*wbO = WB_NOP;		// Do nothing
+}
+
+DecodeStage::void decode(unsigned int opcode, sc_int<32> *a, sc_int<32> *b, sc_signal<execOpsT> *eO, sc_signal<memOpsT> *mO, sc_signal<wbOpsT> *wbO, sc_uint<5> *wbRd) {
+	switch(opcode & 0x7F) {
+		case 0b0110111:
+		case 0b0010111:
+		case 0b1101111:		// U
+			sc_int<32> imm;
+			sc_uint<5> rd;
+			switch (typeU(opcode, &imm, &rd)) {
+				case LUI:
+					// TODO
+					break;
+				case AUIPC:
+					// TODO
+					break;
+				case JAL:
+					// TODO
+					break;
+				default:
+					setNop(a,b,eO,mO,wbO);
+			}
+			break;
+		case 0b1100011:
+		case 0b0100011:		// S
+			sc_int<32> imm;
+			sc_uint<5> rs1, rs2;
+			switch (typeS(opcode, &rs1, &rs2, &imm)) {
+				case BEQ:
+					// TODO
+					break;
+				case BNE:
+					// TODO
+					break;
+				case BLT:
+					// TODO
+					break;
+				case BGE:
+					// TODO
+					break;
+				case BLTU:
+					// TODO
+					break;
+				case BGEU:
+					// TODO
+					break;
+				case SB:
+					// TODO
+					break;
+				case SH:
+					// TODO
+					break;
+				case SU:
+					// TODO
+					break;
+				default:
+					setNop(a,b,eO,mO,wbO);
+			}
+			break;
+		case 0b0000011:
+		case 0b0010011:
+		case 0b1110011:
+		case 0b1100111:
+		case 0b0001111:		// I
+			sc_int<32> imm;
+			sc_uint<5> rd, rs1;
+			switch (typeI(opcode, &rs1, &imm, &rd)) {
+				case LB:
+					// TODO
+					break;
+				case LH:
+					// TODO
+					break;
+				case LW:
+					// TODO
+					break;
+				case LBU:
+					// TODO
+					break;
+				case LHU:
+					// TODO
+					break;
+				case ADDI:
+					*a = regs[(int) rs1];
+					if ((imm >> 11) & 1 == 1)
+						*b = 0xFFFFF000 | imm;
+					else
+						*b = imm;
+					*wbRd = rd;
+					*eO = ALU_ADD;
+					*mO = MEM_ALU_OUT;
+					*wbO = WB_WRITE_REG;
+					break;
+				case SLTI:
+					*a = regs[(int) rs1];
+					if ((imm >> 11) & 1 == 1)
+						*b = 0xFFFFF000 | imm;
+					else
+						*b = imm;
+					*wbRd = rd;
+					*eO = ALU_SLT;
+					*mO = MEM_ALU_OUT;
+					*wbO = WB_WRITE_REG;
+					break;
+				case SLTIU:
+					*a = regs[(int) rs1];
+					if ((imm >> 11) & 1 == 1)
+						*b = 0xFFFFF000 | imm;
+					else
+						*b = imm;
+					*wbRd = rd;
+					*eO = ALU_SLTU;
+					*mO = MEM_ALU_OUT;
+					*wbO = WB_WRITE_REG;
+					break;
+				case XORI:
+					*a = regs[(int) rs1];
+					if ((imm >> 11) & 1 == 1)
+						*b = 0xFFFFF000 | imm;
+					else
+						*b = imm;
+					*wbRd = rd;
+					*eO = ALU_XOR;
+					*mO = MEM_ALU_OUT;
+					*wbO = WB_WRITE_REG;
+					break;
+				case ORI:
+					*a = regs[(int) rs1];
+					if ((imm >> 11) & 1 == 1)
+						*b = 0xFFFFF000 | imm;
+					else
+						*b = imm;
+					*wbRd = rd;
+					*eO = ALU_OR;
+					*mO = MEM_ALU_OUT;
+					*wbO = WB_WRITE_REG;
+					break;
+				case ANDI:
+					*a = regs[(int) rs1];
+					if ((imm >> 11) & 1 == 1)
+						*b = 0xFFFFF000 | imm;
+					else
+						*b = imm;
+					*wbRd = rd;
+					*eO = ALU_AND;
+					*mO = MEM_ALU_OUT;
+					*wbO = WB_WRITE_REG;
+					break;
+				case SLLI:
+					*a = regs[(int) rs1];
+					if ((imm >> 11) & 1 == 1)
+						*b = 0xFFFFF000 | imm;
+					else
+						*b = imm;
+					*wbRd = rd;
+					*eO = ALU_SLL;
+					*mO = MEM_ALU_OUT;
+					*wbO = WB_WRITE_REG;
+					break;
+				case SRLI:
+					*a = regs[(int) rs1];
+					if ((imm >> 11) & 1 == 1)
+						*b = 0xFFFFF000 | imm;
+					else
+						*b = imm;
+					*wbRd = rd;
+					*eO = ALU_SRL;
+					*mO = MEM_ALU_OUT;
+					*wbO = WB_WRITE_REG;
+					break;
+				case SRAI:
+					*a = regs[(int) rs1];
+					if ((imm >> 11) & 1 == 1)
+						*b = 0xFFFFF000 | imm;
+					else
+						*b = imm;
+					*wbRd = rd;
+					*eO = ALU_SRA;
+					*mO = MEM_ALU_OUT;
+					*wbO = WB_WRITE_REG;
+					break;
+				case ECALL:
+					// TODO
+					break;
+				case EBREAK:
+					// TODO
+					break;
+				case JALR:
+					// TODO
+					break;
+				case FENCE:
+					// TODO
+					break;
+				default:
+					setNop(a,b,eO,mO,wbO);
+			}
+			break;
+		case 0b0110011:		// R
+			sc_uint<5> rd, rs1, rs2;
+			switch (typeR(opcode, &rs1, &rs2, &rd)) {
+				case ADD:
+					*eo = ALU_ADD;
+					break;
+				case SUB:
+					*eo = ALU_SUB;
+					break;
+				case SLL:
+					*eo = ALU_SLL;
+					break;
+				case SLT:
+					*eo = ALU_SLT;
+					break;
+				case SLTU:
+					*eo = ALU_SLTU;
+					break;
+				case XOR:
+					*eo = ALU_XOR;
+					break;
+				case SRL:
+					*eo = ALU_SRL;
+					break;
+				case SRA:
+					*eo = ALU_SRA;
+					break;
+				case OR:
+					*eo = ALU_OR;
+					break;
+				case AND:
+					*eo = ALU_AND;
+					break;
+				default:
+					setNop(a,b,eO,mO,wbO);
+			}
+			*a = regs[(int) rs1];
+			*b = regs[(int) rs2];
+			*wbRd = rd;
+			*mO = MEM_ALU_OUT;
+			*wbO = WB_WRITE_REG;
+			break;
+		default:			// NOP
+			setNop(a,b,eO,mO,wbO);
+	}
 }
