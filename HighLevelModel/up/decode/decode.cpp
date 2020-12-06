@@ -16,7 +16,7 @@
 				this->regs = regs;
 			}
 			
-			void decode(unsigned int opcode, sc_uint<32> pc, sc_signal<sc_int<32>> *a, sc_signal<sc_int<32>> *b, sc_signal<execOpsT> *eO, sc_signal<memOpsT> *mO, sc_signal<wbOpsT> *wbO) {
+			void decode(unsigned int opcode, sc_uint<32> pc, sc_signal<sc_int<32>> *a, sc_signal<sc_int<32>> *b, sc_signal<sc_int<32>> *deImm, sc_signal<execOpsT> *eO, sc_signal<memOpsT> *mO, sc_signal<wbOpsT> *wbO) {
 				printf("DECODE: ");
 				sc_int<32> imm;
 				sc_uint<5> rd;
@@ -25,17 +25,18 @@
 					case 0b0110111:
 					case 0b0010111:
 					case 0b1101111:		// U
-						*a = imm;
-						*eO = ALU_ADDU;
+						*deImm = imm;
+						*b = 0;
+						*a = (sc_int<32>) pc;
+						*eO = ALU_ADDUI;
 						*mO = MEM_ALU_OUT;
 						*wbO = WB_WRITE_REG;
 						switch (typeU(opcode, &imm, &rd)) {
 							case LUI:
-								*b = 0;
+								*a = 0;
 								printf("LUI %d, %08x", (int) rd, (int) imm);
 								break;
 							case AUIPC:
-								*b = (sc_int<32>) pc;
 								printf("AUIPC %d, %08x", (int) rd, (int) imm);
 								break;
 							case JAL:
@@ -70,13 +71,22 @@
 								// TODO
 								break;
 							case SB:
-								// TODO
+								aluI("SB", rd, rs1, imm, ALU_ADDI, a, b, deImm, eO, mO, wbO);
+								*b = reg[(int) rs2] & 0xFF;
+								*mO = MEM_WRITE8_RS2_OUT;
+								*wbO = WB_NOP;
 								break;
 							case SH:
-								// TODO
+								aluI("SB", rd, rs1, imm, ALU_ADDI, a, b, deImm, eO, mO, wbO);
+								*b = reg[(int) rs2] & 0xFFFF;
+								*mO = MEM_WRITE16_RS2_OUT;
+								*wbO = WB_NOP;
 								break;
 							case SU:
-								// TODO
+								aluI("SB", rd, rs1, imm, ALU_ADDI, a, b, deImm, eO, mO, wbO);
+								*b = reg[(int) rs2];
+								*mO = MEM_WRITE32_RS2_OUT;
+								*wbO = WB_NOP;
 								break;
 							default:
 								setNop(a,b,eO,mO,wbO);
@@ -90,51 +100,51 @@
 					case 0b0001111:		// I
 						switch (typeI(opcode, &rs1, &imm, &rd)) {
 							case LB:
-								aluI("LB", rd, rs1, imm, ALU_ADD, a, b, eO, mO, wbO);
-								*mO = MEM_WRITE_LMD8S_OUT;
+								aluI("LB", rd, rs1, imm, ALU_ADDI, a, b, deImm, eO, mO, wbO);
+								*mO = MEM_READ_LMD8S_OUT;
 								break;
 							case LH:
-								aluI("LH", rd, rs1, imm, ALU_ADD, a, b, eO, mO, wbO);
-								*mO = MEM_WRITE_LMD16S_OUT;
+								aluI("LH", rd, rs1, imm, ALU_ADDI, a, b, deImm, eO, mO, wbO);
+								*mO = MEM_READ_LMD16S_OUT;
 								break;
 							case LW:
-								aluI("LW", rd, rs1, imm, ALU_ADD, a, b, eO, mO, wbO);
-								*mO = MEM_WRITE_LMD32_OUT;
+								aluI("LW", rd, rs1, imm, ALU_ADDI, a, b, deImm, eO, mO, wbO);
+								*mO = MEM_READ_LMD32_OUT;
 								break;
 							case LBU:
-								aluI("LB", rd, rs1, imm, ALU_ADD, a, b, eO, mO, wbO);
-								*mO = MEM_WRITE_LMD8U_OUT;
+								aluI("LB", rd, rs1, imm, ALU_ADDI, a, b, deImm, eO, mO, wbO);
+								*mO = MEM_READ_LMD8U_OUT;
 								break;
 							case LHU:
-								aluI("LHU", rd, rs1, imm, ALU_ADD, a, b, eO, mO, wbO);
-								*mO = MEM_WRITE_LMD16U_OUT;
+								aluI("LHU", rd, rs1, imm, ALU_ADDI, a, b, deImm, eO, mO, wbO);
+								*mO = MEM_READ_LMD16U_OUT;
 								break;
 							case ADDI:
-								aluI("ALUI", rd, rs1, imm, ALU_ADD, a, b, eO, mO, wbO);
+								aluI("ALUI", rd, rs1, imm, ALU_ADDI, a, b, deImm, eO, mO, wbO);
 								break;
 							case SLTI:
-								aluI("SLTI", rd, rs1, imm, ALU_SLT, a, b, eO, mO, wbO);
+								aluI("SLTI", rd, rs1, imm, ALU_SLTI, a, b, deImm, eO, mO, wbO);
 								break;
 							case SLTIU:
-								aluI("SLTIU", rd, rs1, imm, ALU_SLTU, a, b, eO, mO, wbO);
+								aluI("SLTIU", rd, rs1, imm, ALU_SLTUI, a, b, deImm, eO, mO, wbO);
 								break;
 							case XORI:
-								aluI("XORI", rd, rs1, imm, ALU_XOR, a, b, eO, mO, wbO);
+								aluI("XORI", rd, rs1, imm, ALU_XORI, a, b, deImm, eO, mO, wbO);
 								break;
 							case ORI:
-								aluI("ORI", rd, rs1, imm, ALU_OR, a, b, eO, mO, wbO);
+								aluI("ORI", rd, rs1, imm, ALU_ORI, a, b, deImm, eO, mO, wbO);
 								break;
 							case ANDI:
-								aluI("ANDI", rd, rs1, imm, ALU_AND, a, b, eO, mO, wbO);
+								aluI("ANDI", rd, rs1, imm, ALU_ANDI, a, b, deImm, eO, mO, wbO);
 								break;
 							case SLLI:
-								aluI("SLLI", rd, rs1, imm, ALU_SLL, a, b, eO, mO, wbO);
+								aluI("SLLI", rd, rs1, imm, ALU_SLLI, a, b, deImm, eO, mO, wbO);
 								break;
 							case SRLI:
-								aluI("SRLI", rd, rs1, imm, ALU_SRL, a, b, eO, mO, wbO);
+								aluI("SRLI", rd, rs1, imm, ALU_SRLI, a, b, deImm, eO, mO, wbO);
 								break;
 							case SRAI:
-								aluI("SRAI", rd, rs1, imm, ALU_SRA, a, b, eO, mO, wbO);
+								aluI("SRAI", rd, rs1, imm, ALU_SRAI, a, b, deImm, eO, mO, wbO);
 								break;
 							case ECALL:
 								// TODO
@@ -143,7 +153,10 @@
 								// TODO
 								break;
 							case JALR:
-								// TODO
+								aluI("JALR", rd, rs1, imm, ALU_ADDI, a, b, deImm, eO, mO, wbO);
+								*b = (sc_int<32>) pc+4;
+								*mO = MEM_RS2_AND_JUMP;
+								// TODO: force LSB to zero
 								break;
 							case FENCE:
 								// TODO
@@ -396,12 +409,13 @@
 				print("ADD 0, 0, 0\n");
 			}
 			
-			void aluI(String opName, sc_uint<5> rd ,sc_uint<5> rs1, sc_int<32> imm, execOpsT execOp, sc_signal<sc_int<32>> *a, sc_signal<sc_int<32>> *b, sc_signal<execOpsT> *eO, sc_signal<memOpsT> *mO, sc_signal<wbOpsT> *wbO) {
+			void aluI(String opName, sc_uint<5> rd ,sc_uint<5> rs1, sc_int<32> imm, execOpsT execOp, sc_signal<sc_int<32>> *a, sc_signal<sc_int<32>> *b, sc_signal<sc_int<32>> *deImm, sc_signal<execOpsT> *eO, sc_signal<memOpsT> *mO, sc_signal<wbOpsT> *wbO) {
 				*a = regs[(int) rs1];
 				if ((imm >> 11) & 1 == 1)
-					*b = 0xFFFFF000 | imm;
+					*deImm = 0xFFFFF000 | imm;
 				else
-					*b = imm;
+					*deImm = imm;
+				*b = 0;
 				printf("%s %d, %d, %08x", opName, (int) rd, (int) rs1, (int) *b);
 				*eO = execOp;
 				*mO = MEM_ALU_OUT;

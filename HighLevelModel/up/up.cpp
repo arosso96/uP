@@ -19,7 +19,7 @@ SC_MODULE (up) {
 		// Execute
 		//enum execOpsT {ALU_ADD};
 		sc_signal<execOpsT> execOp;
-		sc_signal<sc_int<32>> deA, deB;	// decode to exec
+		sc_signal<sc_int<32>> deA, deB, deImm;	// decode to exec
 		// Memory
 		//enum memOpsT {WRITE};
 		sc_signal<memOpsT> memOp[2];
@@ -42,6 +42,7 @@ SC_MODULE (up) {
 		pc[0] = 0;
 		deA = 0;
 		deB = 0;
+		deImm = 0;
 		ir[0] = 0b00000000000000000000000000110011;
 		execOp = ALU_ADD;
 		for (int i = 0; i < 2; i++)
@@ -86,9 +87,9 @@ SC_MODULE (up) {
 		pc[0].write(pc[0].read()+4);
 		
 		// Decode
-		dStage.decode(ir[0].read(), pc[1], &deA, &deB, &execOp, memOp, wbOp);
+		dStage.decode(ir[0].read(), pc[1], &deA, &deB, &deImm, &execOp, memOp, wbOp);
 		//Exec
-		exec(execOp, deA, deB, &aluOut, &emRs2);
+		exec(execOp, deA, deB, deImm, &aluOut, &emRs2);
 		// Memory
 		memory(memOp[1], aluOut, emRs2, &memOut, pc);
 		// Write Back
@@ -114,6 +115,9 @@ SC_MODULE (up) {
 		
 		void memory(memOpsT op, sc_int<32> aluOut, sc_int<32> rs2, sc_signal<sc_int<32>> *memOut, sc_signal<sc_uint<32>> *pc) {
 			// TODO: implement all operations
+			// 
+			sc_int<32> ts;
+			sc_uint<32> tu;
 			if (op == MEM_ALU_OUT) {
 				printf("Memory: MEM_ALU_OUT\n");
 				*memOut = aluOut;
@@ -122,7 +126,39 @@ SC_MODULE (up) {
 				*pc = (sc_uint<32>) aluOut;
 				*memOut = rs2;
 				// TODO: flush pipeline
-			} 
+			} else if (op == MEM_READ_LMD8S_OUT) {
+				printf("Memory: MEM_READ_LMD8S_OUT\n");
+				ts = dmem->read8((unsigned int) aluOut);
+				*memOut = ts;
+			} else if (op == MEM_READ_LMD16S_OUT) {
+				printf("Memory: MEM_READ_LMD16S_OUT\n");
+				ts = dmem->read16((unsigned int) aluOut);
+				*memOut = ts;
+			} else if (op == MEM_READ_LMD32_OUT) {
+				printf("Memory: MEM_READ_LMD32_OUT\n");
+				*memOut = dmem->read32((unsigned int) aluOut);
+			} else if (op == MEM_READ_LMD8U_OUT) {
+				printf("Memory: MEM_READ_LMD8U_OUT\n");
+				tu = dmem->read8((unsigned int) aluOut);
+				*memOut = tu;
+			} else if (op == MEM_READ_LMD16U_OUT) {
+				printf("Memory: MEM_READ_LMD16U_OUT\n");
+				tu = dmem->read16((unsigned int) aluOut);
+				*memOut = tu;
+			} else if (op == MEM_WRITE8_RS2_OUT) {
+				printf("Memory: MEM_WRITE8_RS2_OUT\n");
+				dmem->write8((sc_int<8>) rs2);
+				*memOut = rs2;
+			} else if (op == MEM_WRITE16_RS2_OUT) {
+				printf("Memory: MEM_WRITE16_RS2_OUT\n");
+				dmem->write16((sc_int<16>) rs2);
+				*memOut = rs2;
+			} else if (op == MEM_WRITE32_RS2_OUT) {
+				printf("Memory: MEM_WRITE32_RS2_OUT\n");
+				dmem->write32(rs2);
+				*memOut = rs2;
+				aluOut
+			}
 		}
 		
 		void wb(wbOpsT op, sc_int<32> in, sc_uint<32> ir) {
