@@ -1,14 +1,13 @@
 #include "systemc.h"
 #include "../mem/mem_interface.cpp"
 
-#include "decode/decode_tmp.cpp"
+#include "decode/decode.cpp"
 
 
 
 
 
 SC_MODULE (up) {
-		// TODO: improve printf
 	private:
 		sc_signal<sc_uint<32>> pc;
 		sc_signal<sc_int<32>> regs[32]; // Registers
@@ -38,10 +37,13 @@ SC_MODULE (up) {
 	sc_port<mem_if> dmem;
 	
 	SC_CTOR (up) : dStage("DECODE") {
+		// Init with default value
+		regs[0] = 0;
 		dStage.setRegFile(regs);
 		pc = 0;
 		deA = 0;
 		deB = 0;
+		ir[0] = 0b00000000000000000000000000110011;
 		execOp = ALU_ADD;
 		for (int i = 0; i < 2; i++)
 			memOp[i] = MEM_ALU_OUT;
@@ -54,7 +56,6 @@ SC_MODULE (up) {
 		memOut = 0;
 		SC_METHOD(cycle);
 		sensitive << clock.pos();
-		dont_initialize();
 	}
 	
 	bool pipelineEmpty() {
@@ -64,7 +65,9 @@ SC_MODULE (up) {
 	void cycle() { 
 		// TODO: add hazard check -> put NOP instead of fetched ir and don't increase pc
 		// TODO: add jump prediction and pipeline flush
+		printf("%d ns\n------------------------------\n", (int) sc_time().value());
 		
+		// Pipeline shifts
 		// shift ir of instrs on the pipeline (usefull for hazards check??)
 		for (int i = 1; i < 5; i++)
 			ir[i] = ir[i-1];
@@ -77,13 +80,22 @@ SC_MODULE (up) {
 		}
 		
 		// Fetch
-		ir[0] = imem->read32(pc.read());
+		printf("PC: %d\n", (int) pc.read());
+		sc_uint<32> t = imem->read32(pc.read());
+		ir[0] = t;
+		printf("FETCH: %08x\n", (int) t);
 		// next pc
 		pc.write(pc.read()+1);
+		
+		// Decode
 		dStage.decode(ir[0].read(), &deA, &deB, &execOp, memOp, wbOp, rd);
+		//Exec
 		exec(execOp, deA, deB, &aluOut, &emRs2);
+		// Memory
 		memory(memOp[1], aluOut, emRs2, &memOut);
+		// Write Back
 		wb(wbOp[2], memOut, rd[2]);
+		printf("------------------------------\n\n");
 	}
 	
 	private:
@@ -94,7 +106,7 @@ SC_MODULE (up) {
 			// TODO: implement all operations
 			*emRs2 = b;
 			if (op == ALU_ADD) {
-				printf("ALU_ADD\n");
+				printf("Exec: ALU_ADD\n");
 				*aluOut = a+b;
 			}
 		}
@@ -102,7 +114,7 @@ SC_MODULE (up) {
 		void memory(memOpsT op, sc_int<32> aluOut, sc_int<32> rs2, sc_signal<sc_int<32>> *memOut) {
 			// TODO: implement all operations
 			if (op == MEM_ALU_OUT) {
-				printf("MEM_ALU_OUT\n");
+				printf("Memory: MEM_ALU_OUT\n");
 				*memOut = aluOut;
 			}
 		}
@@ -111,11 +123,12 @@ SC_MODULE (up) {
 			// TODO: implement all operations
 			switch (op) {
 				case WB_WRITE_REG:
-					printf("WB_WRITE_REG\n");
-					regs[(int) rd] = in;
+					printf("WB: WB_WRITE_REG\n");
+					if (rd != 0)
+						regs[(int) rd] = in;
 					break;
 				default:	// WB_NOP
-					printf("WB_NOP");
+					printf("WB: WB_NOP\n");
 			}
 		}
 };

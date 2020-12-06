@@ -15,9 +15,12 @@ SC_MODULE (tb) {
 	
 	SC_CTOR (tb) : cpu("CPU"), im("IRAM"), dm("DRAM")
 	{
-		unsigned int mR[1] = {0b00000000000100000000000100110011};	// add r0, r1, r2 -> mov r1 content in r2
-		im.load(mR, 1);
-		dm.load(mR, 1);
+		unsigned int mR[2] = {
+			0b00000000000100000000000100110011, // add r0, r1, r2 -> mov r1 content in r2
+			0b01000000000000001000000100110011, // sub r1, r0, r2 -> r2=r1-r0
+		};
+		im.load(mR, 2);
+		dm.load(mR, 0);
 		cpu.imem(im);
 		cpu.dmem(dm);
 		cpu.clock(c);
