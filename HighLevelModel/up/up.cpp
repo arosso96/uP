@@ -11,7 +11,7 @@ SC_MODULE (up) {
 	private:
 		sc_signal<sc_uint<32>> pc[2];
 		sc_signal<sc_int<32>> regs[32]; // Registers
-		sc_signal<sc_uint<32>> ir[5]; // 5 stage pipeline (Fetch, Decode, Execute, Memory, Write Back)
+		sc_signal<sc_uint<32>> ir[4]; // 5 stage pipeline (Fetch, Decode, Execute, Memory, Write Back)
 
 		// Decode
 		DecodeStage dStage;
@@ -27,7 +27,6 @@ SC_MODULE (up) {
 		// Write Back
 		//enum wbOpsT {WRITE_REG};
 		sc_signal<wbOpsT> wbOp[3];
-		sc_signal<sc_uint<5>> rd[3];	// destination register for write back operation
 		sc_signal<sc_int<32>> memOut; // mem to wb
 		
 	public:
@@ -49,10 +48,8 @@ SC_MODULE (up) {
 			memOp[i] = MEM_ALU_OUT;
 		aluOut = 0;
 		emRs2 = 0;
-		for (int i=0; i < 3; i++) {
+		for (int i=0; i < 3; i++)
 			wbOp[i] = WB_NOP;
-			rd[i] = 0;
-		}
 		memOut = 0;
 		SC_METHOD(cycle);
 		sensitive << clock.pos();
@@ -69,17 +66,15 @@ SC_MODULE (up) {
 		
 		// Pipeline shifts
 		// shift ir of instrs on the pipeline (usefull for hazards check??)
-		for (int i = 1; i < 5; i++)
+		for (int i = 1; i < 4; i++)
 			ir[i] = ir[i-1];
 		
 		memOp[1] = memOp[0];
 		
 		pc[1] = pc[0];
 		
-		for (int i = 1; i < 3; i++) {
+		for (int i = 1; i < 3; i++)
 			wbOp[i] = wbOp[i-1];
-			rd[i] = rd[i-1];
-		}
 		
 		// Fetch
 		printf("PC: %d\n", (int) pc[0].read());
@@ -91,13 +86,13 @@ SC_MODULE (up) {
 		pc[0].write(pc[0].read()+4);
 		
 		// Decode
-		dStage.decode(ir[0].read(), pc[1], &deA, &deB, &execOp, memOp, wbOp, rd);
+		dStage.decode(ir[0].read(), pc[1], &deA, &deB, &execOp, memOp, wbOp);
 		//Exec
 		exec(execOp, deA, deB, &aluOut, &emRs2);
 		// Memory
 		memory(memOp[1], aluOut, emRs2, &memOut, pc);
 		// Write Back
-		wb(wbOp[2], memOut, rd[2]);
+		wb(wbOp[2], memOut, ir[3]);
 		printf("------------------------------\n\n");
 	}
 	
@@ -122,16 +117,17 @@ SC_MODULE (up) {
 			if (op == MEM_ALU_OUT) {
 				printf("Memory: MEM_ALU_OUT\n");
 				*memOut = aluOut;
-			} else if (op == MEM_ALU_OUT_AND_JUMP) {
+			} else if (op == MEM_RS2_AND_JUMP) {
 				printf("Memory: MEM_ALU_OUT_AND_JUMP\n");
 				*pc = (sc_uint<32>) aluOut;
-				*memOut = aluOut;
+				*memOut = rs2;
 				// TODO: flush pipeline
 			} 
 		}
 		
-		void wb(wbOpsT op, sc_int<32> in, sc_uint<5> rd) {
+		void wb(wbOpsT op, sc_int<32> in, sc_uint<32> ir) {
 			// TODO: implement all operations
+			sc_uint<5> rd = (ir & 0xF80) >> 7;
 			switch (op) {
 				case WB_WRITE_REG:
 					printf("WB: WB_WRITE_REG\n");
