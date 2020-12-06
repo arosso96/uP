@@ -16,6 +16,7 @@ SC_MODULE (imem), public mem_if {
 	}
   
 	virtual unsigned int read32(unsigned int addr) {
+		addr = addr/4;
 		fLog = fopen("imem.log", "a");
 		if (addr < IMEM_SIZE) {
 			fprintf(fLog, "%d IMEM READ @  %014x, READ %032x\n", (int) sc_time().value(), (int) addr, (int) memData[addr]);
@@ -26,6 +27,7 @@ SC_MODULE (imem), public mem_if {
 		return 0;
 	}
 	virtual void write32(unsigned int addr, unsigned int data) {
+		addr = addr/4;
 		fLog = fopen("imem.log", "a");
 		fprintf(fLog, "%d ERROR IMEM CANNOT BE WROTE\n", (int) sc_time().value());
 		fclose(fLog);

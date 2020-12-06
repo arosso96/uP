@@ -16,6 +16,7 @@ SC_MODULE (dmem), public mem_if {
 	}
   
 	virtual unsigned int read32(unsigned int addr) {
+		addr = addr/4;
 		fLog = fopen("dmem.log", "a");
 		if (addr < DMEM_SIZE) {
 			fprintf(fLog, "%d DMEM READ @  %014x, READ %032x\n", (int) sc_time().value(), (int) addr, (int) memData[addr]);
@@ -26,6 +27,7 @@ SC_MODULE (dmem), public mem_if {
 		return 0;
 	}
 	virtual void write32(unsigned int addr, unsigned int data) {
+		addr = addr/4;
 		fLog = fopen("dmem.log", "a");
 		if (addr < DMEM_SIZE) {
 			fprintf(fLog, "%d DMEM WRITE @  %014x, WROTE %032x\n", (int) sc_time().value(), (int) addr, (int) data);
