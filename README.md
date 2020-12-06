@@ -6,8 +6,9 @@ Here are described all the design steps that are being followed for the developm
 ## Requirements
 The first step is to define the requirements that the system must have. These will then be used in the testing phase to check that the developed system respects all the initial requests.
 ### Functional
-* RiscV RV32I ISA
+* RiscV RV32I ISA [2]
 * Pipelined
+* Hardvard architecture
 * Forwarding and Stalls Handling (Structural, Data, Control \[see below\])
 * Jump Prediction (Predict, Check and Flush the pipeline)
 * Debug and Test support (JTAG + BIST)
@@ -17,13 +18,20 @@ The first step is to define the requirements that the system must have. These wi
 The first model wants to be a sort of ISS (Instruction Set Simulator) loosely timed at instruction level. In order to model it SystemC is used. After the model has been developed it is verified.
 ## Schematic
 First let's analyze the system and split it into some major components, divide et impera!
+### Memories
+Remember that one of the requirements was having an Hardvard architecture! So the data memory is separate from the instruction one, this also make sense because these type of processor use as instruction memory a NOR Flash, while a SRAM (or DRAM) can be used for the data.
+
 ### uP
-### Instruction Memory
-Remember that one of the requirements was having an Hardvard architecture!
-### Data Memory
+#### Fetch
+#### Decode
+#### Execute
+#### Memory
+#### Write Back
+#### Hazard Check
+#### Jump Prediction
 
 # Second Model
-Starting from the previous result, it is possible to expand the model by inserting more detail, modelling each component for instance, still at a non accurate timing level of simulation.
+Starting from the previous result, it is possible to expand the model by inserting more detail, modelling internally each component for instance, still at a non accurate timing level of simulation.
 ## CU and DP
 ### Scheamtic
 ### Components
@@ -54,4 +62,5 @@ With SystemC it is possible to model the microprocessor with an accurate clock s
 
 
 # References
-[1] https://inst.eecs.berkeley.edu/~cs61c/sp18/disc/7/disc07_sol.pdf
+[1] https://inst.eecs.berkeley.edu/~cs61c/sp18/disc/7/disc07_sol.pdf  
+[2] https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMAFDQC/riscv-spec-20191213.pdf
