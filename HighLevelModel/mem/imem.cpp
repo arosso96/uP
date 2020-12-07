@@ -15,22 +15,32 @@ SC_MODULE (imem), public mem_if {
 			memData[i] = 0;
 	}
   
-	virtual unsigned int read32(unsigned int addr) {
+	virtual sc_int<32> read32(unsigned int addr) {
 		addr = addr/4;
 		fLog = fopen("imem.log", "a");
 		if (addr < IMEM_SIZE) {
 			fprintf(fLog, "%d IMEM READ @  %014x, READ %032x\n", (int) sc_time().value(), (int) addr, (int) memData[addr]);
-			return memData[addr];
+			return (sc_int<32>) memData[addr];
 		}
 		fprintf(fLog, "%d IMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time().value(), (int) addr);
 		fclose(fLog);
 		return 0;
 	}
-	virtual void write32(unsigned int addr, unsigned int data) {
+	virtual sc_int<16> read16(unsigned int addr) {
+		return 0;
+	}
+	virtual sc_int<8> read8(unsigned int addr) {
+		return 0;
+	}
+	virtual void write32(unsigned int addr, sc_int<32> data) {
 		addr = addr/4;
 		fLog = fopen("imem.log", "a");
 		fprintf(fLog, "%d ERROR IMEM CANNOT BE WROTE\n", (int) sc_time().value());
 		fclose(fLog);
+	}
+	virtual void write16(unsigned int addr, sc_int<16> data) {
+	}
+	virtual void write8(unsigned int addr, sc_int<8> data) {
 	}
 	void load(unsigned int data[], int size) {
 		fLog = fopen("imem.log", "a");
