@@ -96,7 +96,17 @@ SC_MODULE (up) {
 		//Exec
 		exec(execOp, deA, deB, deImm, pc[2], &aluOut, &emRs2, &comp);
 		// Memory
-		memory(memOp[1], aluOut, emRs2, &memOut, pc, comp);
+		if(memory(memOp[1], aluOut, emRs2, &memOut, pc, comp)) {
+			// Flush pipeline
+			ir[0] = 0b00000000000000000000000000110011;
+			ir[1] = 0b00000000000000000000000000110011;
+			ir[2] = 0b00000000000000000000000000110011;
+			execOp = ALU_ADD;
+			memOp[1] = MEM_ALU_OUT;
+			memOp[0] = MEM_ALU_OUT;
+			wbOp[1] = WB_NOP;
+			wbOp[0] = WB_NOP;
+		}
 		// Write Back
 		wb(wbOp[2], memOut, ir[3]);
 		printf("------------------------------\n\n");
@@ -217,7 +227,7 @@ SC_MODULE (up) {
 			
 		}
 		
-		void memory(memOpsT op, sc_int<32> aluOut, sc_int<32> rs2, sc_signal<sc_int<32>> *memOut, sc_signal<sc_uint<32>> *pc, sc_uint<1> comp) {
+		bool memory(memOpsT op, sc_int<32> aluOut, sc_int<32> rs2, sc_signal<sc_int<32>> *memOut, sc_signal<sc_uint<32>> *pc, sc_uint<1> comp) {
 			// TODO: implement all operations
 			// 
 			sc_int<32> ts;
@@ -229,12 +239,14 @@ SC_MODULE (up) {
 				printf("Memory: MEM_ALU_OUT_AND_JUMP\n");
 				*pc = (sc_uint<32>) aluOut;
 				*memOut = rs2;
-				// TODO: flush pipeline
+				// flush pipeline
+				return true;
 			} else if (op == MEM_RS2_AND_COND_JUMP) {
 				printf("Memory: MEM_ALU_OUT_AND_JUMP\n");
 				if (comp == 1) {
 					*pc = (sc_uint<32>) aluOut;
-					// TODO: flush pipeline
+					// flush pipeline
+					return true;
 				}
 				*memOut = rs2;
 			} else if (op == MEM_READ_LMD8S_OUT) {
@@ -269,6 +281,7 @@ SC_MODULE (up) {
 				dmem->write32((unsigned int) aluOut, (sc_int<32>)rs2);
 				*memOut = rs2;
 			}
+			return false;
 		}
 		
 		void wb(wbOpsT op, sc_int<32> in, sc_uint<32> ir) {
