@@ -19,10 +19,10 @@ SC_MODULE (imem), public mem_if {
 		addr = addr/4;
 		fLog = fopen("imem.log", "a");
 		if (addr < IMEM_SIZE) {
-			fprintf(fLog, "%d IMEM READ @  %014x, READ %032x\n", (int) sc_time().value(), (int) addr, (int) memData[addr]);
+			fprintf(fLog, "%d IMEM READ @  %014x, READ %032x\n", (int) sc_time_stamp().to_default_time_units(), (int) addr, (int) memData[addr]);
 			return (sc_int<32>) memData[addr];
 		}
-		fprintf(fLog, "%d IMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time().value(), (int) addr);
+		fprintf(fLog, "%d IMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time_stamp().to_default_time_units(), (int) addr);
 		fclose(fLog);
 		return 0;
 	}
@@ -35,7 +35,7 @@ SC_MODULE (imem), public mem_if {
 	virtual void write32(unsigned int addr, sc_int<32> data) {
 		addr = addr/4;
 		fLog = fopen("imem.log", "a");
-		fprintf(fLog, "%d ERROR IMEM CANNOT BE WROTE\n", (int) sc_time().value());
+		fprintf(fLog, "%d ERROR IMEM CANNOT BE WROTE\n", (int) sc_time_stamp().to_default_time_units());
 		fclose(fLog);
 	}
 	virtual void write16(unsigned int addr, sc_int<16> data) {

@@ -19,10 +19,10 @@ SC_MODULE (dmem), public mem_if {
 		addr = addr/4;
 		fLog = fopen("dmem.log", "a");
 		if (addr < DMEM_SIZE) {
-			fprintf(fLog, "%d DMEM READ @  %014x, READ %032x\n", (int) sc_time().value(), (int) addr, (int) memData[addr]);
+			fprintf(fLog, "%d DMEM READ @  %014x, READ %032x\n", (int) sc_time_stamp().to_default_time_units(), (int) addr, (int) memData[addr]);
 			return (sc_int<32>) memData[addr];
 		}
-		fprintf(fLog, "%d DMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time().value(), (int) addr);
+		fprintf(fLog, "%d DMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time_stamp().to_default_time_units(), (int) addr);
 		fclose(fLog);
 		return 0;
 	}
@@ -30,10 +30,10 @@ SC_MODULE (dmem), public mem_if {
 		addr = addr/4;
 		fLog = fopen("dmem.log", "a");
 		if (addr < DMEM_SIZE) {
-			fprintf(fLog, "%d DMEM READ @  %014x, READ %032x\n", (int) sc_time().value(), (int) addr, (int) memData[addr]);
+			fprintf(fLog, "%d DMEM READ @  %014x, READ %032x\n", (int) sc_time_stamp().to_default_time_units(), (int) addr, (int) memData[addr]);
 			return (sc_int<16>) memData[addr];
 		}
-		fprintf(fLog, "%d DMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time().value(), (int) addr);
+		fprintf(fLog, "%d DMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time_stamp().to_default_time_units(), (int) addr);
 		fclose(fLog);
 		return 0;
 	}
@@ -41,10 +41,10 @@ SC_MODULE (dmem), public mem_if {
 		addr = addr/4;
 		fLog = fopen("dmem.log", "a");
 		if (addr < DMEM_SIZE) {
-			fprintf(fLog, "%d DMEM READ @  %014x, READ %032x\n", (int) sc_time().value(), (int) addr, (int) memData[addr]);
+			fprintf(fLog, "%d DMEM READ @  %014x, READ %032x\n", (int) sc_time_stamp().to_default_time_units(), (int) addr, (int) memData[addr]);
 			return (sc_int<8>) memData[addr];
 		}
-		fprintf(fLog, "%d DMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time().value(), (int) addr);
+		fprintf(fLog, "%d DMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time_stamp().to_default_time_units(), (int) addr);
 		fclose(fLog);
 		return 0;
 	}
@@ -52,30 +52,30 @@ SC_MODULE (dmem), public mem_if {
 		addr = addr/4;
 		fLog = fopen("dmem.log", "a");
 		if (addr < DMEM_SIZE) {
-			fprintf(fLog, "%d DMEM WRITE @  %014x, WROTE %032x\n", (int) sc_time().value(), (int) addr, (int) data);
+			fprintf(fLog, "%d DMEM WRITE @  %014x, WROTE %032x\n", (int) sc_time_stamp().to_default_time_units(), (int) addr, (int) data);
 			memData[addr] = (unsigned int) data;
 		} else
-			fprintf(fLog, "%d DMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time().value(), (int) addr);
+			fprintf(fLog, "%d DMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time_stamp().to_default_time_units(), (int) addr);
 		fclose(fLog);
 	}
 	virtual void write16(unsigned int addr, sc_int<16> data) {
 		addr = addr/4;
 		fLog = fopen("dmem.log", "a");
 		if (addr < DMEM_SIZE) {
-			fprintf(fLog, "%d DMEM WRITE @  %014x, WROTE %032x\n", (int) sc_time().value(), (int) addr, (int) data);
+			fprintf(fLog, "%d DMEM WRITE @  %014x, WROTE %032x\n", (int) sc_time_stamp().to_default_time_units(), (int) addr, (int) data);
 			memData[addr] = (unsigned int) data; //TODO: correct ??
 		} else
-			fprintf(fLog, "%d DMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time().value(), (int) addr);
+			fprintf(fLog, "%d DMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time_stamp().to_default_time_units(), (int) addr);
 		fclose(fLog);
 	}
 	virtual void write8(unsigned int addr, sc_int<8> data) {
 		addr = addr/4;
 		fLog = fopen("dmem.log", "a");
 		if (addr < DMEM_SIZE) {
-			fprintf(fLog, "%d DMEM WRITE @  %014x, WROTE %032x\n", (int) sc_time().value(), (int) addr, (int) data);
+			fprintf(fLog, "%d DMEM WRITE @  %014x, WROTE %032x\n", (int) sc_time_stamp().to_default_time_units(), (int) addr, (int) data);
 			memData[addr] = (unsigned int) data; //TODO: correct ??
 		} else
-			fprintf(fLog, "%d DMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time().value(), (int) addr);
+			fprintf(fLog, "%d DMEM READ, ADDRESS %d OUT OF RANGE\n", (int) sc_time_stamp().to_default_time_units(), (int) addr);
 		fclose(fLog);
 	}
 	void load(unsigned int data[], int size) {

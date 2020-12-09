@@ -10,4 +10,116 @@
 	// The NOP is just an ADD rd = r0, rs1 = r0, rs2 = r0
 	// ^ -> TODO: may be exploited with low power techniques to save power (ex: clock or power gating, or simply freeze FF such that input doesn't cahnge + disable MEM and WB writing)
 	enum decodeOpsT {NOP, LUI, AUIPC, JAL, JALR, BEQ, BNE, BLT, BGE, BLTU, BGEU, LB, LH, LW, LBU, LHU, SB, SH, SW, ADDI, SLTI, SLTIU, XORI, ORI, ANDI, SLLI, SRLI, SRAI, ADD, SUB, SLL, SLT, SLTU, XOR, SRL, SRA, OR, AND, FENCE, ECALL, EBREAK};
+	
+	class ExecInstrT {
+		
+		public:
+		
+		execOpsT op;
+		sc_int<32> a, b, imm, pc;
+		
+		// constructor
+		ExecInstrT (execOpsT op_ = ALU_ADD, sc_int<32> a_ = 0, sc_int<32> b_ = 0, sc_int<32> imm_ = 0, sc_int<32> pc_ = 0) {
+			op = op_;
+			a = a_;
+			b = b_;
+			imm = imm_;
+			pc = pc_;
+		}
+
+		inline bool operator == (const ExecInstrT & eit) const {
+			return (eit.op == op && eit.a == a && eit.b == b && eit.imm == imm  && eit.pc == pc);
+		}
+
+		inline ExecInstrT& operator = (const ExecInstrT& eit) {
+			op = eit.op;
+			a = eit.a;
+			b = eit.b;
+			imm = eit.imm;
+			pc = eit.pc;
+			return *this;
+		}
+
+		inline friend void sc_trace(sc_trace_file *tf, const ExecInstrT & v,
+		const std::string & NAME ) {
+		}
+
+		inline friend ostream& operator << ( ostream& os,  ExecInstrT const & v ) {
+		  os << "(" << v.op << ")";
+		  return os;
+		}
+
+	};
+	
+	class MemInstrT {
+		
+		public:
+		
+		memOpsT op;
+		sc_int<32> aluOut, rs2;
+		bool comp;
+		
+		// constructor
+		MemInstrT (memOpsT op_ = MEM_ALU_OUT, sc_int<32> aluOut_ = 0, sc_int<32> rs2_ = 0, bool comp_ = false) {
+			op = op_;
+			aluOut = aluOut_;
+			rs2 = rs2_;
+			comp = comp_;
+		}
+
+		inline bool operator == (const MemInstrT & v) const {
+			return (v.op == op && v.aluOut == aluOut && v.rs2 == rs2 && v.comp == comp);
+		}
+
+		inline MemInstrT& operator = (const MemInstrT& v) {
+			op = v.op;
+			aluOut = v.aluOut;
+			rs2 = v.rs2;
+			return *this;
+		}
+
+		inline friend void sc_trace(sc_trace_file *tf, const MemInstrT & v,
+		const std::string & NAME ) {
+		}
+
+		inline friend ostream& operator << ( ostream& os,  MemInstrT const & v ) {
+		  os << "(" << v.op << ")";
+		  return os;
+		}
+
+	};
+	
+	class WBInstrT {
+		
+		public:
+		
+		wbOpsT op;
+		sc_int<32> lmd;
+		
+		// constructor
+		WBInstrT (wbOpsT op_ = WB_NOP, sc_int<32> lmd_ = 0) {
+			op = op_;
+			lmd = lmd_;
+		}
+
+		inline bool operator == (const WBInstrT & v) const {
+			return (v.op == op && v.lmd == lmd);
+		}
+
+		inline WBInstrT& operator = (const WBInstrT& v) {
+			op = v.op;
+			lmd = v.lmd;
+			return *this;
+		}
+
+		inline friend void sc_trace(sc_trace_file *tf, const WBInstrT & v,
+		const std::string & NAME ) {
+		}
+
+		inline friend ostream& operator << ( ostream& os,  WBInstrT const & v ) {
+		  os << "(" << v.op << ")";
+		  return os;
+		}
+
+	};
 #endif
