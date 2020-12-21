@@ -7,8 +7,9 @@
 	#define FETCH_D
 	SC_MODULE(FetchStage), public fetch_if {
 		private:
-			sc_signal<sc_uint<32>> pc, ir, jpc;
-			sc_signal<bool> jump, jumpPrev, flushS, flushPrev;
+			sc_signal<sc_uint<32>> ir, pc;
+			sc_signal<sc_uint<32>, SC_MANY_WRITERS> jpc;
+			sc_signal<bool, SC_MANY_WRITERS> jump, jumpPrev, flushS, flushPrev;
 			int c;
 		
 		public:
@@ -62,6 +63,5 @@
 			virtual void flush() {
 				flushS = !flushS;
 			}
-			
 	};
 #endif

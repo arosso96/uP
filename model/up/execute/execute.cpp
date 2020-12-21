@@ -10,7 +10,7 @@
 			sc_signal<MemInstrT> memOpS;
 			sc_signal<wbOpsT> wbOpS;
 			sc_signal<sc_uint<32>> ir;
-			sc_signal<bool> flushS, flushPrev;
+			sc_signal<bool, SC_MANY_WRITERS> flushS, flushPrev;
 			
 		public:
 			

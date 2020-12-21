@@ -1,6 +1,8 @@
 #include "systemc.h"
 #include "..\isa.h"
 #include "..\fetch\fetch_interface.cpp"
+#include "..\execute\execute_interface.cpp"
+#include "..\memory\memory_interface.cpp"
 #include "..\regfile_interface.cpp"
 #include "decode_interface.cpp"
 
@@ -17,6 +19,8 @@
 		public:
 			sc_port<regfile_if> regIf;
 			sc_port<fetch_if> fetchIn;
+			sc_port<execute_if> executeIf;
+			sc_port<memory_if> memIf;
 			sc_in<bool> clock;
 			
 			SC_CTOR(DecodeStage) {
@@ -38,6 +42,7 @@
 				flushPrev = flushS;
 				return execOp;
 			}
+			
 			virtual memOpsT getMemOp() {
 				if (flushS.read() == flushPrev.read())
 					return memOpS.read();
@@ -59,7 +64,55 @@
 				return 0b00000000000000000000000000110011; //add r0, r0, r0
 			}
 			
+			bool hazard_check() {
+				sc_uint<5> rs1D, rs2D, rd, rs1T, rs2T;
+				sc_int<32> imm;
+				decodeOpsT op;
+				sc_uint<32> irE, irM, irWB, irD;
+				int tD, t;
+				irD = fetchIn->getIR();
+				irE = ir;
+				irM = executeIf->getIR();
+				irWB = memIf->getIR();
+				tD = decodeOp(irD, &op, &rs1D, &rs2D, &rd, &imm);
+				if (tD > 0) { // not NOP or U
+					t = decodeOp(irE, &op, &rs1T, &rs2T, &rd, &imm);
+					if (t >= 0 && t != 1) {	//not S or NOP
+						if (rd == rs1D && rs1D != 0)
+							return true;
+						if (rd == rs2D && tD != 2 && rs2D != 0)
+							return true;
+					}
+					t = decodeOp(irM, &op, &rs1T, &rs2T, &rd, &imm);
+					if (t >= 0 && t != 1) {	//not S or NOP
+						if (rd == rs1D && rs1D != 0)
+							return true;
+						if (rd == rs2D && tD != 2 && rs2D != 0)
+							return true;
+					}
+					t = decodeOp(irWB, &op, &rs1T, &rs2T, &rd, &imm);
+					if (t >= 0 && t != 1) {	//not S or NOP
+						if (rd == rs1D && rs1D != 0)
+							return true;
+						if (rd == rs2D && tD != 2 && rs2D != 0)
+							return true;
+					}
+				}
+				return false;
+			}
+			
 			void decode() {
+				if (hazard_check()) {
+					printf("\n\nHAZARD\n\n");
+					ir.write(0b00000000000000000000000000110011);
+					ExecInstrT execOp;
+					execOpS.write(execOp);
+					memOpS.write(MEM_ALU_OUT);
+					wbOpS.write(WB_NOP);
+					fetchIn->setPC(fetchIn->getPC());
+					fetchIn->flush();
+					return;
+				}
 				ExecInstrT execOp;
 				sc_uint<32> opcode = fetchIn->getIR();
 				ir.write(opcode);
@@ -297,6 +350,33 @@
 			}
 			
 		private:
+			int decodeOp(unsigned int opcode, decodeOpsT *op, sc_uint<5> *rs1, sc_uint<5> *rs2, sc_uint<5> *rd, sc_int<32> *imm) {
+				switch(opcode & 0x7F) {
+					case 0b0110111:
+					case 0b0010111:
+					case 0b1101111:		// U
+						*op = typeU(opcode, imm, rd);
+						return 0;
+					case 0b1100011:
+					case 0b0100011:		// S
+						*op = typeS(opcode, rs1, rs2, imm);
+						return 1;
+					case 0b0000011:
+					case 0b0010011:
+					case 0b1110011:
+					case 0b1100111:
+					case 0b0001111:		// I
+						*op = typeI(opcode, rs1, imm, rd);
+						return 2;
+					case 0b0110011:		// R
+						*op = typeR(opcode, rs1, rs2, rd);
+						return 3;
+					default:			// NOP
+						*op = NOP;
+						return -1;
+				}
+			}
+			
 			decodeOpsT typeR(unsigned int opcode, sc_uint<5> *rs1, sc_uint<5> *rs2, sc_uint<5> *rd) {
 			sc_uint<10> funct;
 			*rs1 = (opcode & 0xF8000) >> 15;

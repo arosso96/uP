@@ -40,6 +40,8 @@ SC_MODULE (up) {
 		
 		dStage.regIf(regfile);
 		dStage.fetchIn(fStage);
+		dStage.executeIf(eStage);
+		dStage.memIf(mStage);
 		dStage.clock(clock);
 		
 		eStage.decodeIf(dStage);
